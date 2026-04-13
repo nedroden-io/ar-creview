@@ -23,7 +23,7 @@ async fn generate_code_review<'a>(
                 messages: vec![
                     Message {
                         role: String::from("system"),
-                        content: String::from("I want you to review the code changes in the following git diff. Do not provide any additional explanations or comments."),
+                        content: String::from("I want you to review the code changes in the following git diff, as if it were a pull request. Do not provide any additional explanations or comments."),
                     },
                     Message {
                         role: String::from("user"),
