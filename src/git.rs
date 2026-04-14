@@ -27,22 +27,34 @@ impl GitClient {
         let reference = self.repository.find_reference("refs/remotes/origin/HEAD");
 
         if let Err(e) = reference {
-            anyhow::bail!("Unable to determine the default branch. Try running 'git remote set-head origin --auto'.");
+            anyhow::bail!(
+                "Unable to determine the default branch. Try running 'git remote set-head origin --auto'."
+            );
         }
 
-        let default_branch_name = reference?.resolve()?.shorthand().unwrap_or("unknown").replace("origin/", "");
+        let default_branch_name = reference?
+            .resolve()?
+            .shorthand()
+            .unwrap_or("unknown")
+            .replace("origin/", "");
         let head = self.repository.head()?;
 
         if head.shorthand().unwrap().to_string() == default_branch_name {
-            anyhow::bail!("Current branch is the default branch. Same-branch review is not yet supported.");
+            anyhow::bail!(
+                "Current branch is the default branch. Same-branch review is not yet supported."
+            );
         }
 
         let local_tree = head.peel_to_commit()?.tree()?;
 
-        let default_branch = self.repository.find_branch(default_branch_name.as_str(), BranchType::Local)?;
+        let default_branch = self
+            .repository
+            .find_branch(default_branch_name.as_str(), BranchType::Local)?;
         let default_tree = default_branch.get().peel_to_commit()?.tree()?;
 
-        let diff = self.repository.diff_tree_to_workdir_with_index(Some(&default_tree), None)?;
+        let diff = self
+            .repository
+            .diff_tree_to_workdir_with_index(Some(&default_tree), None)?;
 
         let mut diff_aggr = String::new();
 

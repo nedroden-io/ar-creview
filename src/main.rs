@@ -1,8 +1,8 @@
+mod app;
 mod app_settings;
 mod azure;
 mod cli;
 mod git;
-mod app;
 
 #[tokio::main]
 async fn main() {
