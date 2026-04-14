@@ -13,11 +13,25 @@ impl GitClient {
         }
     }
 
+    pub fn stage_changes(&self) -> anyhow::Result<()> {
+        let mut index = self.repository.index()?;
+
+        index.add_all([&self.path].iter(), git2::IndexAddOption::DEFAULT, None)?;
+        index.write()?;
+
+        Ok(())
+    }
+
     // TODO: If current branch is main, return error. Else, take previous commit
     pub fn get_diff_with_main(&self) -> anyhow::Result<String> {
-        let remote = self.repository.find_remote("origin")?;
+        let reference = self.repository.find_reference("refs/remotes/origin/HEAD");
+
+        if let Err(e) = reference {
+            anyhow::bail!("Unable to determine the default branch. Try running 'git remote set-head origin --auto'.");
+        }
+
+        let default_branch_name = reference?.resolve()?.shorthand().unwrap_or("unknown").replace("origin/", "");
         let head = self.repository.head()?;
-        let default_branch_name = remote.default_branch()?.as_str().unwrap().to_string();
 
         if head.shorthand().unwrap().to_string() == default_branch_name {
             anyhow::bail!("Current branch is the default branch. Same-branch review is not yet supported.");
@@ -28,7 +42,7 @@ impl GitClient {
         let default_branch = self.repository.find_branch(default_branch_name.as_str(), BranchType::Local)?;
         let default_tree = default_branch.get().peel_to_commit()?.tree()?;
 
-        let diff = self.repository.diff_tree_to_tree(Some(&default_tree), Some(&local_tree), None)?;
+        let diff = self.repository.diff_tree_to_workdir_with_index(Some(&default_tree), None)?;
 
         let mut diff_aggr = String::new();
 
