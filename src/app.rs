@@ -6,6 +6,7 @@ pub async fn run() -> anyhow::Result<()> {
     let azure_client = azure::AzureClient::new(&app_config);
 
     let client = git::GitClient::new(run_config.target.to_str().unwrap());
+    client.stage_changes()?;
     let diff = client.get_diff_with_main()?;
 
     println!("{}", generate_code_review(&azure_client, &diff).await?);
